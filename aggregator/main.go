@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/opospisil/grpc-microservices-excercise/model"
 	"github.com/sirupsen/logrus"
@@ -18,6 +19,8 @@ func main() {
 	distanceService = NewLogMiddleware(distanceService)
 
 	http.HandleFunc("/aggregate", handleAggregate(distanceService))
+	http.HandleFunc("/invoice", handleGetInvoice(distanceService))
+
 	logrus.Infof("Aggregator service listening on %s", listenAddr)
 	http.ListenAndServe(listenAddr, nil)
 }
@@ -29,11 +32,33 @@ func handleAggregate(svc AggregatorService) http.HandlerFunc {
 			writeJson(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 			return
 		}
-		if err := svc.AggregateDistance(distance); err != nil {
+		if err := svc.AggregateDistance(&distance); err != nil {
 			writeJson(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
+	}
+}
+
+func handleGetInvoice(svc AggregatorService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		obuid := r.URL.Query().Get("obuid")
+		if obuid == "" {
+			writeJson(w, http.StatusBadRequest, map[string]string{"error": "OBU ID is required"})
+			return
+		}
+		obuidInt, err := strconv.Atoi(obuid)
+		if err != nil {
+			writeJson(w, http.StatusBadRequest, map[string]string{"error": "OBU ID must be an integer"})
+			return
+		}
+
+		invoice, err := svc.GetInvoice(obuidInt)
+		if err != nil {
+			writeJson(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJson(w, http.StatusOK, invoice)
 	}
 }
 

@@ -17,14 +17,33 @@ func NewLogMiddleware(next AggregatorService) AggregatorService {
 	}
 }
 
-func (lm *LogMiddleware) AggregateDistance(distance model.Distance) (err error) {
+func (lm *LogMiddleware) AggregateDistance(distance *model.Distance) (err error) {
 	defer func(start time.Time) {
 		logrus.WithFields(logrus.Fields{
-			"took":  time.Since(start),
-			"error": err,
-      "distance": distance,
-		}).Info("Aggregated distance")
+			"took":     time.Since(start),
+			"error":    err,
+			"distance": distance,
+		}).Info("Aggregating distance")
 	}(time.Now())
 	err = lm.next.AggregateDistance(distance)
+	return
+}
+
+func (lm *LogMiddleware) GetInvoice(obuid int) (invoice *model.Invoice, err error) {
+	defer func(start time.Time) {
+    if err != nil {
+      logrus.WithFields(logrus.Fields{
+        "took":  time.Since(start),
+        "error": err,
+        "obuid": obuid,
+      }).Error("Generating invoice")
+      return
+    }
+		logrus.WithFields(logrus.Fields{
+			"took":  time.Since(start),
+			"obuid": obuid,
+		}).Info("Generating invoice")
+	}(time.Now())
+	invoice, err = lm.next.GetInvoice(obuid)
 	return
 }
