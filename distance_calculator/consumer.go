@@ -60,7 +60,7 @@ func (kc *KafkaConsumer) Start() {
 				OBUID:     pair.Current.OBUID,
 			}
 
-			if err := kc.ac.AggregateInvoice(distance); err != nil {
+			if err := kc.ac.AggregateDistance(distance); err != nil {
 				logrus.Errorf("Error aggregating distance: %+v", err)
 				continue
 			}

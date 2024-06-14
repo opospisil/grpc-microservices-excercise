@@ -17,7 +17,7 @@ func NewClient(endpoint string) *AggClient {
 	return &AggClient{Endpoint: endpoint}
 }
 
-func (c *AggClient) AggregateInvoice(distance model.Distance) error {
+func (c *AggClient) AggregateDistance(distance model.Distance) error {
 	b, err := json.Marshal(distance)
 	if err != nil {
 		return err
