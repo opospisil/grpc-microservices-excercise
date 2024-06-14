@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/opospisil/grpc-microservices-excercise/aggregator/client"
 	"github.com/opospisil/grpc-microservices-excercise/model"
 	"github.com/sirupsen/logrus"
 )
@@ -18,6 +20,7 @@ type KafkaConsumer struct {
 	isRunning bool
 	svc       CalculatorService
 	cache     DataCache
+	ac        *client.AggClient
 }
 
 func (kc *KafkaConsumer) Start() {
@@ -50,12 +53,22 @@ func (kc *KafkaConsumer) Start() {
 				logrus.Errorf("Error calculating distance: %+v", err)
 				continue
 			}
-      _ = dist
+
+			distance := model.Distance{
+				Value:     dist,
+				Timestamp: time.Now().Unix(),
+				OBUID:     pair.Current.OBUID,
+			}
+
+			if err := kc.ac.AggregateInvoice(distance); err != nil {
+				logrus.Errorf("Error aggregating distance: %+v", err)
+				continue
+			}
 		}
 	}
 }
 
-func NewKafkaConsumer(topic string, svc CalculatorService, cache DataCache) (DataConsumer, error) {
+func NewKafkaConsumer(topic string, svc CalculatorService, cache DataCache, aggClient *client.AggClient) (DataConsumer, error) {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": "localhost",
 		"group.id":          "myGroup",
@@ -71,6 +84,7 @@ func NewKafkaConsumer(topic string, svc CalculatorService, cache DataCache) (Dat
 		consumer: c,
 		topic:    topic,
 		svc:      svc,
-    cache: cache,
-	}, nil
+		cache:    cache,
+    ac:       aggClient,
+  }, nil
 }

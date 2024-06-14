@@ -21,7 +21,7 @@ func (lm *LogMiddleware) CalculateDistance(pair CoordsPair) (dist float64, err e
 			"took":     time.Since(start),
 			"error":    err,
 			"distance": dist,
-      "obuidA": pair.Current.OBUID,
+      "obuid": pair.Current.OBUID,
 		}).Info("Calculating distance")
 	}(time.Now())
 	dist, err = lm.next.CalculateDistance(pair)

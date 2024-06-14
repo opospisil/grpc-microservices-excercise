@@ -8,7 +8,8 @@ type CalculatorService interface {
 	CalculateDistance(pair CoordsPair) (float64, error)
 }
 
-type CalculatorServiceImpl struct{}
+type CalculatorServiceImpl struct{
+}
 
 func (cs *CalculatorServiceImpl) CalculateDistance(pair CoordsPair) (float64, error) {
   err := pair.Validate()

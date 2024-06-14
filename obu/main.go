@@ -41,7 +41,7 @@ func generateOBUIDS(n int) []int {
 }
 
 func main() {
-	obuIDS := generateOBUIDS(20)
+	obuIDS := generateOBUIDS(3)
 	conn, _, err := websocket.DefaultDialer.Dial(wsEndpoint, nil)
 	if err != nil {
 		log.Fatal("dial:", err)
