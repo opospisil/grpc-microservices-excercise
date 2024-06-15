@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net"
 	"net/http"
 	"strconv"
 
+	"github.com/opospisil/grpc-microservices-excercise/aggregator/client"
 	"github.com/opospisil/grpc-microservices-excercise/model"
 	"github.com/opospisil/grpc-microservices-excercise/proto"
 	"github.com/sirupsen/logrus"
@@ -25,6 +27,14 @@ func main() {
 	distanceService = NewLogMiddleware(distanceService)
 
 	go makeGRPCTransport(grpcListenAddr, distanceService)
+
+  aggClient, err := client.NewGRPCClient(grpcListenAddr)
+  if err != nil {
+    logrus.Fatalf("Error creating gRPC client: %v", err)
+  }
+
+ aggClient.AggregateDistance(context.Background(), &proto.AggregateDistanceRequest{Value: 100, ObuID: 1, Timestamp: 0})
+
 	makeHTTPTransport(httpListenAddr, distanceService)
 }
 
