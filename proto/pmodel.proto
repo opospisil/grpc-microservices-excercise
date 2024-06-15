@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "github.com/opospisil/grpc-microservices-excercise/proto";
+
+service DistanceAggregator {
+  rpc AggregateDistance(AggregateDistanceRequest) returns(None);
+}
+
+message None {};
+
+message AggregateDistanceRequest {
+  int32 ObuID = 1;
+  double Value = 2;
+  int64 Timestamp = 3;
+}

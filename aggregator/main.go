@@ -2,14 +2,20 @@ package main
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"strconv"
 
 	"github.com/opospisil/grpc-microservices-excercise/model"
+	"github.com/opospisil/grpc-microservices-excercise/proto"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
-const listenAddr = "localhost:8080"
+const (
+	httpListenAddr = "localhost:8080"
+	grpcListenAddr = "localhost:8081"
+)
 
 func main() {
 	var (
@@ -18,11 +24,8 @@ func main() {
 	)
 	distanceService = NewLogMiddleware(distanceService)
 
-	http.HandleFunc("/aggregate", handleAggregate(distanceService))
-	http.HandleFunc("/invoice", handleGetInvoice(distanceService))
-
-	logrus.Infof("Aggregator service listening on %s", listenAddr)
-	http.ListenAndServe(listenAddr, nil)
+	go makeGRPCTransport(grpcListenAddr, distanceService)
+	makeHTTPTransport(httpListenAddr, distanceService)
 }
 
 func handleAggregate(svc AggregatorService) http.HandlerFunc {
@@ -66,4 +69,26 @@ func writeJson(rw http.ResponseWriter, status int, v any) error {
 	rw.WriteHeader(status)
 	rw.Header().Add("Content-Type", "application/json")
 	return json.NewEncoder(rw).Encode(v)
+}
+
+func makeGRPCTransport(listenerAddr string, svc AggregatorService) error {
+	// Create a listener on the specified address
+	ln, err := net.Listen("tcp", listenerAddr)
+	if err != nil {
+		return err
+	}
+	defer ln.Close()
+	// Create a new gRPC server
+	grpcServer := grpc.NewServer([]grpc.ServerOption{}...)
+	// Register the DistanceAggregator service with the gRPC server
+	proto.RegisterDistanceAggregatorServer(grpcServer, NewGRPCServer(svc))
+	logrus.Infof("Aggregator service gRPC listening on %s", listenerAddr)
+	return grpcServer.Serve(ln)
+}
+
+func makeHTTPTransport(listenerAddr string, svc AggregatorService) error {
+	http.HandleFunc("/aggregate", handleAggregate(svc))
+	http.HandleFunc("/invoice", handleGetInvoice(svc))
+	logrus.Infof("Aggregator service HTTP listening on %s", listenerAddr)
+	return http.ListenAndServe(listenerAddr, nil)
 }
