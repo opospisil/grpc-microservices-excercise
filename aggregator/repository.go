@@ -8,16 +8,16 @@ import (
 
 type DistanceRepository interface {
 	Store(*model.Distance) error
-  Get(int) (float64, error)
+  Get(int64) (float64, error)
 }
 
 type InMemoryDistanceRepository struct {
-	data map[int]float64
+	data map[int64]float64
 }
 
 func NewInMemoryDistanceRepository() DistanceRepository {
 	return &InMemoryDistanceRepository{
-		data: make(map[int]float64),
+		data: make(map[int64]float64),
 	}
 }
 
@@ -26,7 +26,7 @@ func (idr *InMemoryDistanceRepository) Store(distance *model.Distance) error {
 	return nil
 }
 
-func (idr *InMemoryDistanceRepository) Get(obuid int) (float64, error) {
+func (idr *InMemoryDistanceRepository) Get(obuid int64) (float64, error) {
   result, ok := idr.data[obuid]
   if !ok {
     return 0, fmt.Errorf("OBU ID %d not found", obuid)

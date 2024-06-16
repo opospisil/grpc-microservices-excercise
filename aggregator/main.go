@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"net"
 	"net/http"
 	"strconv"
 
-	"github.com/opospisil/grpc-microservices-excercise/aggregator/client"
 	"github.com/opospisil/grpc-microservices-excercise/model"
 	"github.com/opospisil/grpc-microservices-excercise/proto"
 	"github.com/sirupsen/logrus"
@@ -28,12 +26,12 @@ func main() {
 
 	go makeGRPCTransport(grpcListenAddr, distanceService)
 
-  aggClient, err := client.NewGRPCClient(grpcListenAddr)
-  if err != nil {
-    logrus.Fatalf("Error creating gRPC client: %v", err)
-  }
+	// aggClient, err := client.NewGRPCClient(grpcListenAddr)
+	// if err != nil {
+	//   logrus.Fatalf("Error creating gRPC client: %v", err)
+	// }
 
- aggClient.AggregateDistance(context.Background(), &proto.AggregateDistanceRequest{Value: 100, ObuID: 1, Timestamp: 0})
+	// aggClient.AggregateDistance(context.Background(), &proto.AggregateDistanceRequest{Value: 100, ObuID: 1, Timestamp: 0})
 
 	makeHTTPTransport(httpListenAddr, distanceService)
 }
@@ -60,7 +58,7 @@ func handleGetInvoice(svc AggregatorService) http.HandlerFunc {
 			writeJson(w, http.StatusBadRequest, map[string]string{"error": "OBU ID is required"})
 			return
 		}
-		obuidInt, err := strconv.Atoi(obuid)
+		obuidInt, err := strconv.ParseInt(obuid, 10, 64)
 		if err != nil {
 			writeJson(w, http.StatusBadRequest, map[string]string{"error": "OBU ID must be an integer"})
 			return

@@ -31,10 +31,10 @@ func init() {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 }
 
-func generateOBUIDS(n int) []int {
-	var obuids []int
+func generateOBUIDS(n int) []int64 {
+	var obuids []int64
 	for i := 0; i < n; i++ {
-		obuids = append(obuids, rand.Intn(math.MaxInt))
+		obuids = append(obuids, int64(rand.Intn(math.MaxInt)))
 	}
 
 	return obuids

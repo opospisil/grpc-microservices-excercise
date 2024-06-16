@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/opospisil/grpc-microservices-excercise/proto"
 	"google.golang.org/grpc"
@@ -14,6 +15,7 @@ import (
 
 type AggClient interface {
 	AggregateDistance(context.Context, *proto.AggregateDistanceRequest) error
+	GetInvoice(context.Context, *proto.GetInvoiceRequest) (*proto.InvoiceResponse, error)
 }
 
 type HttpAggClient struct {
@@ -22,6 +24,24 @@ type HttpAggClient struct {
 
 func NewHttpClient(endpoint string) AggClient {
 	return &HttpAggClient{Endpoint: endpoint}
+}
+
+func (c *HttpAggClient) GetInvoice(ctx context.Context, invRq *proto.GetInvoiceRequest) (*proto.InvoiceResponse, error) {
+	resp, err := http.Get(c.Endpoint + "/invoice?obuid=" + strconv.Itoa(int(invRq.ObuID)))
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d\nresponse: %+v", resp.StatusCode, resp)
+	}
+
+	var invoice proto.InvoiceResponse
+	if err := json.NewDecoder(resp.Body).Decode(&invoice); err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return &invoice, nil
 }
 
 func (c *HttpAggClient) AggregateDistance(ctx context.Context, aggReq *proto.AggregateDistanceRequest) error {
@@ -67,4 +87,8 @@ func NewGRPCClient(endpoint string) (*GrpcAggClient, error) {
 func (c *GrpcAggClient) AggregateDistance(ctx context.Context, aggReq *proto.AggregateDistanceRequest) error {
 	_, err := c.client.AggregateDistance(ctx, aggReq)
 	return err
+}
+
+func (c *GrpcAggClient) GetInvoice(ctx context.Context, invRq *proto.GetInvoiceRequest) (*proto.InvoiceResponse, error) {
+	return c.client.GetInvoice(ctx, invRq)
 }

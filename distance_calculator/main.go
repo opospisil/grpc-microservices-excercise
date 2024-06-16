@@ -7,7 +7,8 @@ import (
 
 const (
   kafkaTopic = "obu-data"
-  aggClientEndpoint = "http://localhost:8080"
+  aggClientHttpEndpoint = "http://localhost:8080"
+  aggClientGrpcEndpoint = "localhost:8081"
 )
 
 type DistanceCalculator struct{}
@@ -16,8 +17,8 @@ func main() {
 	svc := NewCalculatorService()
 	svc = NewLogMiddleware(svc)
   cache := NewDataCache()
-  //aggHttpClient := client.NewHttpClient(aggClientEndpoint)
-  aggGrpcClient, err := client.NewGRPCClient("localhost:8081")
+  //aggHttpClient := client.NewHttpClient(aggClientHttpEndpoint)
+  aggGrpcClient, err := client.NewGRPCClient(aggClientGrpcEndpoint)
   if err != nil {
     logrus.Fatalf("Error creating gRPC client: %v", err)
   }

@@ -13,7 +13,7 @@ const (
 
 type AggregatorService interface {
 	AggregateDistance(*model.Distance) error
-	GetInvoice(obuid int) (*model.Invoice, error)
+	GetInvoice(obuid int64) (*model.Invoice, error)
 }
 
 type InvoiceAggregator struct {
@@ -30,7 +30,7 @@ func (ia *InvoiceAggregator) AggregateDistance(distance *model.Distance) error {
 	return ia.distanceRepo.Store(distance)
 }
 
-func (ia *InvoiceAggregator) GetInvoice(obuid int) (*model.Invoice, error) {
+func (ia *InvoiceAggregator) GetInvoice(obuid int64) (*model.Invoice, error) {
 	retrievedDist, err := ia.distanceRepo.Get(obuid)
 	if err != nil {
 		return &model.Invoice{}, err

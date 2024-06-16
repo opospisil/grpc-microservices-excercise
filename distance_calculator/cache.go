@@ -17,12 +17,12 @@ type DataCache interface {
 }
 
 type NonPersistentCache struct {
-	cache map[int][]*model.OBUData
+	cache map[int64][]*model.OBUData
 }
 
 func NewDataCache() DataCache {
 	return &NonPersistentCache{
-		cache: make(map[int][]*model.OBUData),
+		cache: make(map[int64][]*model.OBUData),
 	}
 }
 

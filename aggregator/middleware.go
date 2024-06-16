@@ -29,7 +29,7 @@ func (lm *LogMiddleware) AggregateDistance(distance *model.Distance) (err error)
 	return
 }
 
-func (lm *LogMiddleware) GetInvoice(obuid int) (invoice *model.Invoice, err error) {
+func (lm *LogMiddleware) GetInvoice(obuid int64) (invoice *model.Invoice, err error) {
 	defer func(start time.Time) {
     if err != nil {
       logrus.WithFields(logrus.Fields{

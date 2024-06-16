@@ -19,7 +19,7 @@ func NewGRPCServer(svc AggregatorService) *GRPCServer {
 func (s *GRPCServer) AggregateDistance(ctx context.Context, in *proto.AggregateDistanceRequest) (*proto.None, error) {
 	dist := &model.Distance{
 		Value:     in.Value,
-		OBUID:     int(in.ObuID),
+		OBUID:     int64(in.ObuID),
 		Timestamp: in.Timestamp,
 	}
 

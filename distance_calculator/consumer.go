@@ -59,7 +59,7 @@ func (kc *KafkaConsumer) Start() {
 			distance := proto.AggregateDistanceRequest{ 
 				Value:     dist,
 				Timestamp: time.Now().Unix(),
-				ObuID:     int32(pair.Current.OBUID),
+				ObuID:     pair.Current.OBUID,
 			}
 
 			if err := kc.ac.AggregateDistance(context.Background(), &distance); err != nil {

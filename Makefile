@@ -17,6 +17,10 @@ aggregator:
 proto:
 	@protoc --go_out=. --go_opt=paths=source_relative proto/pmodel.proto --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/pmodel.proto
 
-.PHONY: obu aggregator proto
+gateway:
+	@go build -o bin/gateway ./gateway
+	@./bin/gateway
+
+.PHONY: obu aggregator proto gateway
 
 

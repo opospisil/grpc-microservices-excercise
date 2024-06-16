@@ -3,13 +3,23 @@ syntax = "proto3";
 option go_package = "github.com/opospisil/grpc-microservices-excercise/proto";
 
 service DistanceAggregator {
-  rpc AggregateDistance(AggregateDistanceRequest) returns(None);
+  rpc AggregateDistance(AggregateDistanceRequest) returns (None);
+  rpc GetInvoice(GetInvoiceRequest) returns (InvoiceResponse);
 }
 
 message None {};
 
 message AggregateDistanceRequest {
-  int32 ObuID = 1;
+  int64 ObuID = 1;
   double Value = 2;
   int64 Timestamp = 3;
+}
+
+message GetInvoiceRequest { int64 ObuID = 1; }
+
+message InvoiceResponse {
+  int64 ObuID = 1;
+  double Amount = 2;
+  string DateTime = 3;
+  float Distance = 4;
 }
