@@ -4,19 +4,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
+	"github.com/joho/godotenv"
 	"github.com/opospisil/grpc-microservices-excercise/aggregator/client"
 	"github.com/opospisil/grpc-microservices-excercise/proto"
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	httpListenAddr     = "localhost:8082"
-	aggregatorEndpoint = "http://localhost:8080"
-)
-
 func main() {
+	if err := godotenv.Load(); err != nil {
+		logrus.Fatal("Error loading .env file")
+	}
+
+	var (
+		httpListenAddr     = os.Getenv("CALC_HTTP_ADDR")
+		aggregatorEndpoint = fmt.Sprintf("http://%s", os.Getenv("AGG_HTTP_ADDR"))
+	)
+
 	httpClient := client.NewHttpClient(aggregatorEndpoint)
 	invoiceSvc := NewInvoiceService(httpClient)
 
@@ -41,7 +47,7 @@ func (is *InvoiceService) handleGetInvoice(w http.ResponseWriter, r *http.Reques
 
 	inv, err := is.client.GetInvoice(r.Context(), &proto.GetInvoiceRequest{ObuID: int64(intId)})
 	if err != nil {
-    logrus.Errorf("Error getting invoice: %v", err)
+		logrus.Errorf("Error getting invoice: %v", err.Error())
 		return err
 	}
 

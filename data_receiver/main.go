@@ -2,23 +2,32 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/websocket"
+	"github.com/joho/godotenv"
 	"github.com/opospisil/grpc-microservices-excercise/model"
+	"github.com/sirupsen/logrus"
 )
 
 const kafkaTopic = "obu-data"
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		logrus.Fatal("Error loading .env file")
+	}
+
+	receiverWsAddr := os.Getenv("RECEIVER_WS_ADDR")
+
 	receiver, err := NewDataReceiver()
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	http.HandleFunc("/ws", receiver.handleWS)
-	http.ListenAndServe(":30000", nil)
+	http.ListenAndServe(receiverWsAddr, nil)
 }
 
 type DataReceiver struct {
@@ -57,7 +66,7 @@ func (dr *DataReceiver) handleWS(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	dr.conn = conn
 
@@ -69,7 +78,7 @@ func (dr *DataReceiver) wsReceiveLoop() {
 	for {
 		var data model.OBUData
 		if err := dr.conn.ReadJSON(&data); err != nil {
-			log.Println(err)
+			logrus.Println(err)
 			continue
 		}
 		dr.produceData(data)

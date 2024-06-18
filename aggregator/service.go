@@ -8,7 +8,7 @@ import (
 
 const (
 	DDMMYYYYhhmmss = "2006-01-02 15:04:05"
-  basePrice = 0.13
+	basePrice      = 0.13
 )
 
 type AggregatorService interface {

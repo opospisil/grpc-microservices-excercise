@@ -1,82 +1,37 @@
 package main
 
 import (
-	"encoding/json"
+	"log"
 	"net"
 	"net/http"
-	"strconv"
+	"os"
 
-	"github.com/opospisil/grpc-microservices-excercise/model"
+	"github.com/joho/godotenv"
 	"github.com/opospisil/grpc-microservices-excercise/proto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
-const (
-	httpListenAddr = "localhost:8080"
-	grpcListenAddr = "localhost:8081"
-)
-
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	var (
 		distanceRepo    = NewInMemoryDistanceRepository()
 		distanceService = NewInvoiceAggregator(distanceRepo)
+    httpHandler     = NewAggHttpHandler(distanceService)
+		httpListenAddr  = os.Getenv("AGG_HTTP_ADDR")
+		grpcListenAddr  = os.Getenv("AGG_GRPC_ADDR")
 	)
 	distanceService = NewLogMiddleware(distanceService)
+	distanceService = NewMetricsMiddleware(distanceService)
+  httpHandler = NewHttpMetricsMiddleware(httpHandler)
 
 	go makeGRPCTransport(grpcListenAddr, distanceService)
-
-	// aggClient, err := client.NewGRPCClient(grpcListenAddr)
-	// if err != nil {
-	//   logrus.Fatalf("Error creating gRPC client: %v", err)
-	// }
-
-	// aggClient.AggregateDistance(context.Background(), &proto.AggregateDistanceRequest{Value: 100, ObuID: 1, Timestamp: 0})
-
-	makeHTTPTransport(httpListenAddr, distanceService)
-}
-
-func handleAggregate(svc AggregatorService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var distance model.Distance
-		if err := json.NewDecoder(r.Body).Decode(&distance); err != nil {
-			writeJson(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-			return
-		}
-		if err := svc.AggregateDistance(&distance); err != nil {
-			writeJson(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
-		}
-		w.WriteHeader(http.StatusCreated)
-	}
-}
-
-func handleGetInvoice(svc AggregatorService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		obuid := r.URL.Query().Get("obuid")
-		if obuid == "" {
-			writeJson(w, http.StatusBadRequest, map[string]string{"error": "OBU ID is required"})
-			return
-		}
-		obuidInt, err := strconv.ParseInt(obuid, 10, 64)
-		if err != nil {
-			writeJson(w, http.StatusBadRequest, map[string]string{"error": "OBU ID must be an integer"})
-			return
-		}
-
-		invoice, err := svc.GetInvoice(obuidInt)
-		if err != nil {
-			writeJson(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
-		}
-		writeJson(w, http.StatusOK, invoice)
-	}
-}
-
-func writeJson(rw http.ResponseWriter, status int, v any) error {
-	rw.WriteHeader(status)
-	rw.Header().Add("Content-Type", "application/json")
-	return json.NewEncoder(rw).Encode(v)
+	makeHTTPTransport(httpListenAddr, httpHandler)
 }
 
 func makeGRPCTransport(listenerAddr string, svc AggregatorService) error {
@@ -94,9 +49,10 @@ func makeGRPCTransport(listenerAddr string, svc AggregatorService) error {
 	return grpcServer.Serve(ln)
 }
 
-func makeHTTPTransport(listenerAddr string, svc AggregatorService) error {
-	http.HandleFunc("/aggregate", handleAggregate(svc))
-	http.HandleFunc("/invoice", handleGetInvoice(svc))
+func makeHTTPTransport(listenerAddr string, ah AggHttpHandler) error {
+	http.HandleFunc("/aggregate", ah.HandleAggregate().ServeHTTP)
+	http.HandleFunc("/invoice", ah.HandleGetInvoice().ServeHTTP)
+	http.Handle("/metrics", promhttp.Handler())
 	logrus.Infof("Aggregator service HTTP listening on %s", listenerAddr)
 	return http.ListenAndServe(listenerAddr, nil)
 }
